@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATELIER FLEUR</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#15110f;color:#f4e9dc;font-family:Arial,sans-serif}
+header{height:72px;padding:0 5%;display:flex;align-items:center;justify-content:space-between;background:#1d1815;border-bottom:1px solid #6a5136}
+.logo{font-family:Georgia,serif;font-size:27px;letter-spacing:5px}
+.logo span{color:#c6a36b}
+header small{color:#c6a36b;letter-spacing:2px;font-size:9px}
+main{max-width:1400px;margin:auto;padding:25px 3%}
+.intro{text-align:center;margin-bottom:25px}
+.intro small{color:#c6a36b;letter-spacing:4px}
+h1{font-family:Georgia,serif;font-weight:normal;font-size:43px;margin:10px 0}
+.intro p{color:#b6a697;font-size:12px}
+.layout{display:grid;grid-template-columns:270px 1fr;gap:20px}
+.panel{background:#211b17;border:1px solid #594431;padding:20px}
+.panel h2,.info h3{font-family:Georgia,serif;font-weight:normal;font-size:25px;margin:0 0 18px}
+.label{font-size:10px;color:#c6a36b;letter-spacing:3px;margin:22px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.flower,.wrap{
+ background:#302720;color:#f3e5d5;border:1px solid #584637;
+ padding:12px 8px;cursor:pointer;text-align:left;font-size:12px;
+ border-radius:3px;transition:.15s
+}
+.flower:hover,.wrap:hover,.flower.active,.wrap.active{
+ border-color:#e1b977;background:#493627
+}
+.flower span{display:block;font-size:25px;margin-bottom:6px}
+.counter{display:flex;align-items:center;justify-content:space-between}
+.counter button{background:#493627;color:white;border:1px solid #92704b;width:38px;height:35px;font-size:19px;cursor:pointer}
+.counter strong{font-size:14px}
+.action{width:100%;padding:14px;background:#c6a36b;color:#17110c;border:0;margin-top:10px;font-weight:bold;font-size:10px;letter-spacing:2px;cursor:pointer}
+.action:hover{background:#e3c58e}
+.action.alt{background:transparent;color:#e0c399;border:1px solid #92704b}
+.stage{height:600px;background:radial-gradient(ellipse at center,#594335,#241b16 65%,#14100e);border:1px solid #6b5138;position:relative;overflow:hidden}
+#scene{width:100%;height:100%;display:block}
+.stage-title{position:absolute;top:15px;left:17px;color:#d4b27c;font-size:9px;letter-spacing:3px;pointer-events:none}
+.hint{position:absolute;bottom:13px;left:0;right:0;text-align:center;font-size:9px;color:#d0b99c;letter-spacing:2px;pointer-events:none}
+.stage-tools{position:absolute;right:12px;top:12px;display:flex;gap:5px}
+.stage-tools button{background:#211b17;color:#f1ddc2;border:1px solid #806343;padding:9px;cursor:pointer;font-size:10px}
+.info{background:#211b17;border:1px solid #594431;padding:18px;margin-top:20px}
+.info h3{margin:0 0 10px}
+#summary,#collection{font-size:12px;color:#b9a999;line-height:1.8}
+.saved{background:#302720;color:#f3dfc1;border:1px solid #826342;padding:9px;margin:4px;cursor:pointer}
+footer{text-align:center;padding:30px;color:#76675a;font-size:9px;letter-spacing:3px}
+#status{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#ffe0b2;font-size:13px;width:90%;pointer-events:none}
+@media(max-width:800px){
+ .layout{grid-template-columns:1fr}
+ .stage{height:480px}
+ h1{font-size:34px}
+ header small{font-size:7px}
+}
+</style>
+
+<!-- Three.js подключается обычным скриптом -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+<header>
+ <div class="logo">ATELIER <span>FLEUR</span></div>
+ <small>3D FLOWER STUDIO</small>
+</header>
+
+<main>
+ <div class="intro">
+  <small>VIRTUAL FLOWER ATELIER</small>
+  <h1>Создай свою композицию</h1>
+  <p>Собери уникальный букет своими руками</p>
+ </div>
+
+ <div class="layout">
+  <aside class="panel">
+   <h2>Мастерская</h2>
+
+   <div class="label">01 — ВЫБЕРИ ЦВЕТОК</div>
+   <div class="grid">
+    <button class="flower active" data-type="rose"><span>🌹</span>Роза</button>
+    <button class="flower" data-type="peony"><span>🌸</span>Пион</button>
+    <button class="flower" data-type="tulip"><span>🌷</span>Тюльпан</button>
+    <button class="flower" data-type="daisy"><span>🌼</span>Ромашка</button>
+    <button class="flower" data-type="orchid"><span>🪷</span>Орхидея</button>
+    <button class="flower" data-type="hydrangea"><span>💐</span>Гортензия</button>
+   </div>
+
+   <div class="label">02 — КОЛИЧЕСТВО</div>
+   <div class="counter">
+    <button id="minus">−</button>
+    <strong id="count">1 цветок</strong>
+    <button id="plus">+</button>
+   </div>
+   <button class="action" id="add">ДОБАВИТЬ В БУКЕТ</button>
+
+   <div class="label">03 — УПАКОВКА</div>
+   <div class="grid">
+    <button class="wrap active" data-wrap="cream">Молочная</button>
+    <button class="wrap" data-wrap="pink">Пудровая</button>
+    <button class="wrap" data-wrap="black">Чёрная</button>
+    <button class="wrap" data-wrap="kraft">Крафт</button>
+   </div>
+
+   <div class="label">04 — МОЙ БУКЕТ</div>
+   <button class="action" id="save">СОХРАНИТЬ</button>
+   <button class="action alt" id="clear">НАЧАТЬ ЗАНОВО</button>
+  </aside>
+
+  <section class="stage">
+   <div class="stage-title">ATELIER FLEUR / 3D PREVIEW</div>
+   <div class="stage-tools">
+    <button id="reset">СПЕРЕДИ</button>
+    <button id="rotate">ВРАЩЕНИЕ</button>
+   </div>
+   <div id="status">Загружаем цветочную мастерскую...</div>
+   <canvas id="scene"></canvas>
+   <div class="hint">ПЕРЕТАСКИВАЙ ДЛЯ ВРАЩЕНИЯ · КОЛЁСИКО ДЛЯ ПРИБЛИЖЕНИЯ</div>
+  </section>
+ </div>
+
+ <div class="info">
+  <h3>Твоя композиция</h3>
+  <div id="summary">Букет загружается...</div>
+ </div>
+
+ <div class="info">
+  <h3>Моя коллекция</h3>
+  <div id="collection">Пока здесь пусто.</div>
+ </div>
+</main>
+
+<footer>ATELIER FLEUR · MADE WITH LOVE</footer>
+
+<script>
+/* Все кнопки и интерфейс работают отдельно от 3D */
+(function(){
+ const names={
+  rose:'Роза',peony:'Пион',tulip:'Тюльпан',
+  daisy:'Ромашка',orchid:'Орхидея',hydrangea:'Гортензия'
+ };
+ const colors={
+  rose:0xc51c50,peony:0xe6a1b5,tulip:0xe05272,
+  daisy:0xf5e9ca,orchid:0xa36ebc,hydrangea:0x8296dc
+ };
+ const wrapping={
+  cream:0xe8d9c5,pink:0xd69eaa,black:0x302b30,kraft:0x9e7951
+ };
+
+ let selected='rose';
+ let amount=1;
+ let wrap='cream';
+ let flowers=['rose','rose','peony','tulip','daisy'];
+
+ const count=document.getElementById('count');
+ const summary=document.getElementById('summary');
+
+ function counter(){
+  count.textContent=amount+' '+(amount===1?'цветок':amount<5?'цветка':'цветков');
+ }
+
+ function updateSummary(){
+  const counts={};
+  flowers.forEach(f=>counts[f]=(counts[f]||0)+1);
+  summary.textContent=flowers.length
+   ? 'Всего: '+flowers.length+' цветов. '+Object.entries(counts).map(([f,n])=>names[f]+': '+n).join(' · ')
+   : 'Выбери цветы и добавь их в букет.';
+ }
+
+ document.querySelectorAll('[data-type]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+   selected=btn.dataset.type;
+   document.querySelectorAll('[data-type]').forEach(b=>b.classList.remove('active'));
+   btn.classList.add('active');
+  });
+ });
+
+ document.querySelectorAll('[data-wrap]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+   wrap=btn.dataset.wrap;
+   document.querySelectorAll('[data-wrap]').forEach(b=>b.classList.remove('active'));
+   btn.classList.add('active');
+   draw();
+  });
+ });
+
+ document.getElementById('plus').onclick=()=>{
+  amount=Math.min(20,amount+1);counter();
+ };
+ document.getElementById('minus').onclick=()=>{
+  amount=Math.max(1,amount-1);counter();
+ };
+
+ document.getElementById('add').onclick=()=>{
+  if(flowers.length+amount>30){
+   alert('Максимум 30 цветов.');return;
+  }
+  for(let i=0;i<amount;i++)flowers.push(selected);
+  draw();updateSummary();
+ };
+
+ document.getElementById('clear').onclick=()=>{
+  flowers=[];draw();updateSummary();
+ };
+
+ function getSaved(){
+  try{return JSON.parse(localStorage.getItem('atelier-working')||'[]')}
+  catch(e){return []}
+ }
+
+ function showCollection(){
+  const root=document.getElementById('collection');
+  root.innerHTML='';
+  const saved=getSaved();
+  if(!saved.length){
+   root.textContent='Пока здесь пусто.';
+   return;
+  }
+  saved.forEach(item=>{
+   const btn=document.createElement('button');
+   btn.className='saved';
+   btn.textContent='✿ '+item.name;
+   btn.onclick=()=>{
+    flowers=[...item.flowers];wrap=item.wrap;
+    document.querySelectorAll('[data-wrap]').forEach(b=>{
+     b.classList.toggle('active',b.dataset.wrap===wrap);
+    });
+    draw();updateSummary();
+   };
+   btn.oncontextmenu=e=>{
+    e.preventDefault();
+    if(confirm('Удалить букет?')){
+     localStorage.setItem('atelier-working',
+      JSON.stringify(getSaved().filter(x=>x.id!==item.id)));
+     showCollection();
+    }
+   };
+   root.appendChild(btn);
+  });
+ }
+
+ document.getElementById('save').onclick=()=>{
+  if(!flowers.length){alert('Сначала добавь цветы.');return}
+  const name=prompt('Название букета:','Мой букет');
+  if(!name)return;
+  const saved=getSaved();
+  saved.push({id:Date.now(),name,flowers:[...flowers],wrap});
+  localStorage.setItem('atelier-working',JSON.stringify(saved));
+  showCollection();
+  alert('Букет сохранён!');
+ };
+
+ /* 3D-движок. Если он не загрузился, интерфейс всё равно остаётся рабочим. */
+ let scene,camera,renderer,controls,group,spinning=false;
+
+ function init3D(){
+  if(!window.THREE){
+   document.getElementById('status').textContent=
+    'Не загрузилась 3D-библиотека. Проверь интернет и обнови страницу.';
+   return;
+  }
+
+  const T=window.THREE;
+  const canvas=document.getElementById('scene');
+
+  scene=new T.Scene();
+  scene.background=new T.Color(0x30231b);
+  scene.fog=new T.Fog(0x30231b,12,24);
+
+  camera=new T.PerspectiveCamera(38,1,.1,100);
+  camera.position.set(0,4,10);
+
+  renderer=new T.WebGLRenderer({canvas,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=T.PCFSoftShadowMap;
+  renderer.outputColorSpace=T.SRGBColorSpace;
+  renderer.toneMapping=T.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.2;
+
+  scene.add(new T.HemisphereLight(0xffe5ca,0x483226,2));
+  const light=new T.DirectionalLight(0xffe3c3,3);
+  light.position.set(-4,8,6);
+  light.castShadow=true;
+  scene.add(light);
+
+  const fill=new T.PointLight(0xffb4a0,45,18);
+  fill.position.set(4,4,4);
+  scene.add(fill);
+
+  const floor=new T.Mesh(
+   new T.CircleGeometry(10,64),
+   new T.MeshStandardMaterial({color:0x403027,roughness:.9})
+  );
+  floor.rotation.x=-Math.PI/2;
+  floor.position.y=-.08;
+  floor.receiveShadow=true;
+  scene.add(floor);
+
+  const pedestal=new T.Mesh(
+   new T.CylinderGeometry(1.5,1.6,.18,48),
+   new T.MeshStandardMaterial({color:0x75553b,metalness:.35,roughness:.4})
+  );
+  pedestal.position.y=0;
+  pedestal.castShadow=true;
+  scene.add(pedestal);
+
+  group=new T.Group();
+  scene.add(group);
+
+  if(T.OrbitControls){
+   controls=new T.OrbitControls(camera,renderer.domElement);
+   controls.enableDamping=true;
+   controls.target.set(0,2.1,0);
+   controls.minDistance=5;
+   controls.maxDistance=15;
+   controls.maxPolarAngle=Math.PI*.82;
+  }
+
+  document.getElementById('status').style.display='none';
+  resize();
+  draw();
+  animate();
+ }
+
+ function mat(color,rough=.5){
+  return new THREE.MeshStandardMaterial({
+   color,roughness:rough,side:THREE.DoubleSide
+  });
+ }
+
+ function sphere(parent,color,x,y,z,sx,sy,sz){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(1,18,14),mat(color,.45));
+  m.position.set(x,y,z);
+  m.scale.set(sx,sy,sz);
+  m.castShadow=true;
+  parent.add(m);
+  return m;
+ }
+
+ function rod(parent,a,b,color,radius){
+  const start=new THREE.Vector3(...a);
+  const end=new THREE.Vector3(...b);
+  const dir=new THREE.Vector3().subVectors(end,start);
+  const mesh=new THREE.Mesh(
+   new THREE.CylinderGeometry(radius*.75,radius,dir.length(),8),
+   mat(color,.8)
+  );
+  mesh.position.copy(start).add(end).multiplyScalar(.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+  mesh.castShadow=true;
+  parent.add(mesh);
+ }
+
+ function petal(parent,color,x,y,z,angle,sx,sy,sz){
+  const p=sphere(parent,color,x,y,z,sx,sy,sz);
+  p.rotation.z=angle;
+  p.rotation.x=.2;
+ }
+
+ function createFlower(type,x,y,z,scale){
+  const f=new THREE.Group();
+  f.position.set(x,y,z);
+  f.scale.setScalar(scale);
+  const color=colors[type];
+
+  if(type==='hydrangea'){
+   for(let i=0;i<34;i++){
+    const a=Math.random()*Math.PI*2;
+    const r=Math.sqrt(Math.random())*.35;
+    sphere(f,color,
+     Math.cos(a)*r,Math.sin(a)*r,.05+Math.random()*.12,
+     .105,.105,.09);
+   }
+  }else{
+   let n=type==='rose'?22:type==='peony'?30:type==='daisy'?16:6;
+   for(let i=0;i<n;i++){
+    const a=i/n*Math.PI*2;
+    const layer=Math.floor(i/8);
+    const radius=type==='rose'?.11+layer*.055:
+                 type==='peony'?.12+layer*.065:.22;
+    const shade=new THREE.Color(color).multiplyScalar(.8+Math.random()*.35);
+    let width=.14,length=.29,depth=.07;
+    if(type==='peony'){width=.18;length=.32;depth=.08}
+    if(type==='daisy'){width=.07;length=.31;depth=.045}
+    if(type==='orchid'){width=.19;length=.32;depth=.08}
+    petal(f,shade,
+     Math.cos(a)*radius,Math.sin(a)*radius*.7,.06,
+     -a,width,length,depth);
+   }
+  }
+
+  const center=type==='daisy'?0xe8ac38:
+               type==='orchid'?0xf0d078:
+               type==='rose'?0x75132c:0xc18b51;
+  sphere(f,center,0,0,.14,.13,.13,.1);
+  return f;
+ }
+
+ function draw(){
+  if(!group||!window.THREE)return;
+  while(group.children.length)group.remove(group.children[0]);
+  if(!flowers.length)return;
+
+  const T=window.THREE;
+  const positions=flowers.map((f,i)=>{
+   const a=i*2.399;
+   const r=.12+Math.sqrt(i)*.16;
+   return {
+    x:Math.cos(a)*r,
+    z:Math.sin(a)*r*.5,
+    y:2.6+(i%3)*.13,
+    type:f
+   };
+  });
+
+  // Стебли
+  positions.forEach((p,i)=>{
+   rod(group,[p.x*.3,.12,p.z*.3],[p.x,p.y-.1,p.z],0x37633d,.025);
+   sphere(group,0x477447,p.x*.6,.9,p.z*.5,.09,.35,.04);
+  });
+
+  // Упаковка
+  const paper=new T.Mesh(
+   new T.CylinderGeometry(1.03,.27,2.0,48,1,true),
+   new T.MeshStandardMaterial({
+    color:wrapping[wrap],side:T.DoubleSide,roughness:.7
+   })
+  );
+  paper.position.y=1.05;
+  paper.castShadow=true;
+  group.add(paper);
+
+  // Золотая лента
+  const gold=mat(0xb48a4c,.3);
+  const ribbon=new T.Mesh(new T.TorusGeometry(.43,.045,10,48),gold);
+  ribbon.rotation.x=Math.PI/2;
+  ribbon.position.y=.75;
+  group.add(ribbon);
+
+  // Бант
+  for(const s of [-1,1]){
+   const bow=new T.Mesh(new T.TorusGeometry(.17,.04,10,30),gold);
+   bow.position.set(s*.16,.92,.08);
+   bow.rotation.z=s*.5;
+   group.add(bow);
+  }
+  sphere(group,0xd1aa68,0,.92,.13,.09,.08,.07);
+
+  // Цветы
+  positions.forEach(p=>{
+   group.add(createFlower(p.type,p.x,p.y,p.z,flowers.length>12?.8:.95));
+  });
+ }
+
+ function resize(){
+  if(!renderer||!camera)return;
+  const canvas=document.getElementById('scene');
+  const w=canvas.clientWidth;
+  const h=canvas.clientHeight;
+  if(!w||!h)return;
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h,false);
+ }
+
+ function animate(){
+  requestAnimationFrame(animate);
+  if(spinning&&group)group.rotation.y+=.004;
+  if(controls)controls.update();
+  renderer.render(scene,camera);
+ }
+
+ document.getElementById('reset').onclick=()=>{
+  if(!camera)return;
+  camera.position.set(0,4,10);
+  if(controls){
+   controls.target.set(0,2.1,0);
+   controls.update();
+  }
+ };
+
+ document.getElementById('rotate').onclick=()=>{
+  spinning=!spinning;
+  document.getElementById('rotate').textContent=spinning?'СТОП':'ВРАЩЕНИЕ';
+ };
+
+ // Если библиотека не загрузилась, кнопки всё равно работают.
+ try{
+  init3D();
+ }catch(error){
+  console.error(error);
+  document.getElementById('status').textContent=
+   'Ошибка запуска 3D. Проверь подключение к интернету и попробуй обновить страницу.';
+ }
+
+ window.addEventListener('resize',resize);
+ new MutationObserver(()=>{}); // интерфейс не зависит от 3D
+ updateSummary();
+ showCollection();
+ counter();
+
+})();
+</script>
+</body>
+</html>
